@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	// "log"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +42,7 @@ func (p *PortWrapper) ScanAndText() (bool, string) {
 	}
 
 	t := p.scanner.Text()
-	log.Print("<- " + t)
+	// log.Print("<- " + t)
 
 	return f, t
 }
@@ -50,7 +50,7 @@ func (p *PortWrapper) ScanAndText() (bool, string) {
 func (p *PortWrapper) ReadLine() string {
 	p.scanner.Scan()
 	t := p.scanner.Text()
-	log.Print("<- " + t)
+	// log.Print("<- " + t)
 	return t
 }
 
@@ -58,7 +58,7 @@ func (p *PortWrapper) ReadLinesUntilOk() []string {
 	var ls []string
 	for p.scanner.Scan() {
 		t := p.scanner.Text()
-		log.Print("<- " + t)
+		// log.Print("<- " + t)
 		ls = append(ls, t)
 		if t == "OK" {
 			break
@@ -102,7 +102,7 @@ func (b *BP35A1) getWrappedScanner() *PortWrapper {
 }
 
 func (b *BP35A1) write(s string) error {
-	log.Print("-> " + s)
+	// log.Print("-> " + s)
 	_, err := b.Port.Write([]byte(s))
 	if err != nil {
 		return err
@@ -111,8 +111,8 @@ func (b *BP35A1) write(s string) error {
 }
 
 func (b *BP35A1) writeBytes(bs []byte) error {
-	log.Print("-> ", bs)
-	log.Print(fmt.Sprintf("-> %v", bs))
+	// log.Print("-> ", bs)
+	// log.Print(fmt.Sprintf("-> %v", bs))
 	_, err := b.Port.Write(bs)
 	if err != nil {
 		return err
@@ -299,8 +299,6 @@ func (b *BP35A1) SKJOIN(addr string) (bool, error) {
 }
 
 func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, data []byte) ([]*Frame, error) {
-	// TODO: assert length
-	// TODO: Is it correct?
 	cmd := []byte(fmt.Sprintf("SKSENDTO %X %s %.4X %X %.4X ", handle, ipaddr, port, sec, len(data)))
 	cmd = append(cmd[:], data[:]...)
 	cmd = append(cmd[:], []byte("\r\n")[:]...)
@@ -321,9 +319,7 @@ func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, d
 			}
 
 			if strings.HasPrefix(t, "ERXUDP") {
-				parts := strings.Split(t, " ")
-				data := parts[8]
-				frame, err := NewFrameFromString(data)
+				frame, err := NewFrameFromString(strings.Split(t, " ")[8])
 				if err != nil {
 					continue
 				}
