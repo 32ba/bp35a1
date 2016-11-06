@@ -8,7 +8,6 @@ import (
 	// "log"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/tarm/serial"
 )
@@ -298,7 +297,7 @@ func (b *BP35A1) SKJOIN(addr string) (bool, error) {
 	return false, nil
 }
 
-func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, data []byte) ([]*Frame, error) {
+func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, data []byte, done <-chan struct{}) (<-chan *Frame, error) {
 	cmd := []byte(fmt.Sprintf("SKSENDTO %X %s %.4X %X %.4X ", handle, ipaddr, port, sec, len(data)))
 	cmd = append(cmd[:], data[:]...)
 	cmd = append(cmd[:], []byte("\r\n")[:]...)
@@ -308,14 +307,16 @@ func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, d
 	}
 
 	pw := b.getWrappedScanner()
-	_ = pw.ReadLinesUntilOk()
 
-	var frames []*Frame
+	c := make(chan *Frame)
+
 	go func() {
+		defer close(c)
+
 		for {
 			flag, t := pw.ScanAndText()
 			if !flag {
-				break
+				return
 			}
 
 			if strings.HasPrefix(t, "ERXUDP") {
@@ -323,12 +324,15 @@ func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, d
 				if err != nil {
 					continue
 				}
-				frames = append(frames, frame)
+
+				select {
+				case <-done:
+					return
+				case c <- frame:
+				}
 			}
 		}
 	}()
 
-	<-time.After(5 * time.Second)
-
-	return frames, nil
+	return c, nil
 }
