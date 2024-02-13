@@ -221,6 +221,9 @@ func (b *BP35A1) SKSCAN() (*PAN, error) {
 		if !flag {
 			break
 		}
+		if strings.HasPrefix(t, "EVENT 22") {
+			return nil, errors.New("SKSCAN failed")
+		}
 		if strings.HasPrefix(t, "EVENT 20") {
 			break
 		}
