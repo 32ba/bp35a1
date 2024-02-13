@@ -320,6 +320,9 @@ func (b *BP35A1) SKSENDTO(handle uint8, ipaddr string, port uint16, sec uint8, d
 			}
 
 			if strings.HasPrefix(t, "ERXUDP") {
+				if len(strings.Split(t, " ")) < 9 {
+					continue
+				}
 				frame, err := NewFrameFromString(strings.Split(t, " ")[8])
 				if err != nil {
 					continue
